@@ -1,5 +1,6 @@
 ﻿using Auth.API.DTO;
 using Auth.API.Entities;
+using FluentResults;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -19,14 +20,13 @@ public class AuthenticationService : IAuthenticationService
         _configuration = configuration;
     }
 
-    public async Task<string> Register(RegisterRequest request)
+    public async Task<Result<string>> Register(RegisterRequest request)
     {
         var userByEmail = await _userManager.FindByEmailAsync(request.Email);
         var userByUsername = await _userManager.FindByNameAsync(request.UserName);
+
         if (userByEmail is not null || userByUsername is not null)
-        {
-            throw new ArgumentException($"User with email {request.Email} or username {request.UserName} already exists.");
-        }
+            return Result.Fail($"User with email {request.Email} or username {request.UserName} already exists.");
 
         User user = new()
         {
@@ -40,14 +40,13 @@ public class AuthenticationService : IAuthenticationService
         await _userManager.AddToRoleAsync(user, Role.User);
 
         if (!result.Succeeded)
-        {
-            throw new ArgumentException($"Unable to register user {request.UserName} errors: {GetErrorsText(result.Errors)}");
-        }
+            return Result.Fail($"Unable to register user {request.UserName} errors: {GetErrorsText(result.Errors)}");
+
 
         return await Login(new LoginRequest { Username = request.Email, Password = request.Password });
     }
 
-    public async Task<string> Login(LoginRequest request)
+    public async Task<Result<string>> Login(LoginRequest request)
     {
         var user = await _userManager.FindByNameAsync(request.Username);
 
@@ -57,9 +56,7 @@ public class AuthenticationService : IAuthenticationService
         }
 
         if (user is null || !await _userManager.CheckPasswordAsync(user, request.Password))
-        {
-            throw new ArgumentException($"Unable to authenticate user {request.Username}");
-        }
+            return Result.Fail($"Unable to authenticate user {request.Username}");
 
         var authClaims = new List<Claim>
         {
@@ -74,7 +71,7 @@ public class AuthenticationService : IAuthenticationService
 
         var token = GetToken(authClaims);
 
-        return new JwtSecurityTokenHandler().WriteToken(token);
+        return Result.Ok(new JwtSecurityTokenHandler().WriteToken(token));
     }
 
     private JwtSecurityToken GetToken(IEnumerable<Claim> authClaims)

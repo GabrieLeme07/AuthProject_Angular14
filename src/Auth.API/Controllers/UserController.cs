@@ -1,4 +1,5 @@
 ﻿using Auth.API.DTO;
+using Auth.API.Extensions;
 using Auth.API.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -23,9 +24,14 @@ public class UserController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
-        var response = await _authenticationService.Login(request);
+        var result = await _authenticationService.Login(request);
 
-        return Ok(response);
+        var resultDto = result.ToResultDto();
+
+        if (!resultDto.IsSuccess)
+            return BadRequest(resultDto);
+
+        return Ok(resultDto);
     }
 
     [AllowAnonymous]
@@ -35,8 +41,13 @@ public class UserController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Register([FromBody] RegisterRequest request)
     {
-        var response = await _authenticationService.Register(request);
+        var result = await _authenticationService.Register(request);
 
-        return Ok(response);
+        var resultDto = result.ToResultDto();
+
+        if (!resultDto.IsSuccess)
+            return BadRequest(resultDto);
+
+        return Ok(resultDto);
     }
 }

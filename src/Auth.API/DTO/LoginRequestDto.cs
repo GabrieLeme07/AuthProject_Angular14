@@ -1,11 +1,15 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Auth.API.Validations;
+using System.ComponentModel.DataAnnotations;
 
 namespace Auth.API.DTO;
 
 public class LoginRequest
 {
-    [Required]
+    [MinLength(ConstsValidation.UsernameMinLength,
+        ErrorMessage = ConstsValidation.UsernameLengthValidationError)]
     public string? Username { get; set; }
-    [Required]
+
+    [RegularExpression(ConstsValidation.PasswordRegex,
+        ErrorMessage = ConstsValidation.PasswordValidationError)]
     public string? Password { get; set; }
 }
