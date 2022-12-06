@@ -18,8 +18,19 @@ builder.Services.AddDbContext<AppDbContext>(options
 
 // 2. Identity
 builder.Services.AddIdentity<User, IdentityRole>()
+    .AddRoles<IdentityRole>()
+    .AddRoleManager<RoleManager<IdentityRole>>()
     .AddEntityFrameworkStores<AppDbContext>()
     .AddDefaultTokenProviders();
+
+//Add authorization policies
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("ElevatedRights", policy =>
+        policy.RequireRole(Role.Admin));
+    options.AddPolicy("StandardRights", policy =>
+        policy.RequireRole(Role.Admin, Role.User));
+});
 
 // 3. Adding Authentication
 builder.Services.AddAuthentication(options =>
@@ -47,8 +58,8 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
+
 // 5. Swagger authentication
 builder.Services.AddSwaggerGen(c =>
 {
@@ -115,5 +126,12 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+
+    await SeedManager.Seed(services);
+}
 
 app.Run();

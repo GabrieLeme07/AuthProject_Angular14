@@ -37,6 +37,8 @@ public class AuthenticationService : IAuthenticationService
 
         var result = await _userManager.CreateAsync(user, request.Password);
 
+        await _userManager.AddToRoleAsync(user, Role.User);
+
         if (!result.Succeeded)
         {
             throw new ArgumentException($"Unable to register user {request.UserName} errors: {GetErrorsText(result.Errors)}");
@@ -65,6 +67,10 @@ public class AuthenticationService : IAuthenticationService
             new(ClaimTypes.Email, user.Email),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
         };
+
+        var userRoles = await _userManager.GetRolesAsync(user);
+
+        authClaims.AddRange(userRoles.Select(userRole => new Claim(ClaimTypes.Role, userRole)));
 
         var token = GetToken(authClaims);
 

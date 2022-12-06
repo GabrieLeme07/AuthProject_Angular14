@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Auth.API.Controllers
 {
     [ApiController]
-    [Authorize]
+    [Authorize(Policy = "StandardRights")]
     [Route("[controller]")]
     public class WeatherForecastController : ControllerBase
     {
@@ -30,6 +30,16 @@ namespace Auth.API.Controllers
                 Summary = Summaries[Random.Shared.Next(Summaries.Length)]
             })
             .ToArray();
+        }
+
+        [Authorize(Policy = "ElevatedRights")]
+        [HttpGet("GetWeatherForecastForAdminsOnly")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(string))]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public IActionResult GetForAdminOnly()
+        {
+            return Ok("Yeah, we have some secret weather only for admins.");
         }
     }
 }
